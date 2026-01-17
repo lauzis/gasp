@@ -1,0 +1,23 @@
+# Compiled schemas
+schemas/gschemas.compiled
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Development
+*.log
+node_modules/
+.DS_Store
+
+# Database (user data)
+*.db
+*.sqlite
+*.sqlite3
+
+# Build artifacts
+*.zip
+dist/

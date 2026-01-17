@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+  <schema id="org.gnome.shell.extensions.gasp" path="/org/gnome/shell/extensions/gasp/">
+    
+    <!-- Google Analytics API Configuration -->
+    <key name="ga-api-key" type="s">
+      <default>''</default>
+      <summary>Google Analytics Service Account JSON</summary>
+      <description>Service account credentials JSON content for Google Analytics</description>
+    </key>
+    
+    <key name="ga-property-id" type="s">
+      <default>''</default>
+      <summary>Google Analytics Property ID</summary>
+      <description>The GA property/project ID to track</description>
+    </key>
+    
+    <key name="ga-project-name" type="s">
+      <default>''</default>
+      <summary>Project Name</summary>
+      <description>Display name of the tracked project</description>
+    </key>
+    
+    <!-- Display Options -->
+    <key name="panel-display" type="s">
+      <default>'daily'</default>
+      <summary>Panel Display Mode</summary>
+      <description>What to show in panel: daily, weekly, monthly, or nothing</description>
+    </key>
+    
+    <!-- Refresh Interval -->
+    <key name="refresh-interval" type="i">
+      <default>1</default>
+      <summary>Refresh Interval</summary>
+      <description>How often to refresh data in hours (1, 2, 4, 8, 12, 24)</description>
+      <range min="1" max="24"/>
+    </key>
+    
+    <!-- Current Stats Cache -->
+    <key name="current-daily" type="i">
+      <default>0</default>
+      <summary>Current Daily Visitors</summary>
+      <description>Current day visitor count</description>
+    </key>
+    
+    <key name="current-weekly" type="i">
+      <default>0</default>
+      <summary>Current Weekly Visitors</summary>
+      <description>Current week visitor count</description>
+    </key>
+    
+    <key name="current-monthly" type="i">
+      <default>0</default>
+      <summary>Current Monthly Visitors</summary>
+      <description>Current month visitor count</description>
+    </key>
+    
+    <!-- Peak Stats Cache -->
+    <key name="record-daily" type="i">
+      <default>0</default>
+      <summary>Daily Visitor Peak</summary>
+      <description>All-time daily visitor peak</description>
+    </key>
+    
+    <key name="record-weekly" type="i">
+      <default>0</default>
+      <summary>Weekly Visitor Peak</summary>
+      <description>All-time weekly visitor peak</description>
+    </key>
+    
+    <key name="record-monthly" type="i">
+      <default>0</default>
+      <summary>Monthly Visitor Peak</summary>
+      <description>All-time monthly visitor peak</description>
+    </key>
+    
+    <!-- Last Update Timestamp -->
+    <key name="last-update" type="s">
+      <default>''</default>
+      <summary>Last Update Time</summary>
+      <description>Timestamp of last data refresh</description>
+    </key>
+    
+    <!-- API Connection Status -->
+    <key name="api-connected" type="b">
+      <default>false</default>
+      <summary>API Connected</summary>
+      <description>Whether API has successfully connected and retrieved data</description>
+    </key>
+    
+    <!-- Database Path -->
+    <key name="db-path" type="s">
+      <default>''</default>
+      <summary>Database Path</summary>
+      <description>Path to SQLite database file</description>
+    </key>
+    
+  </schema>
+</schemalist>
