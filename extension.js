@@ -1,10 +1,8 @@
 import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
 import {Logger} from './lib/logger.js';
 import {addIndicator} from './lib/panelIndicator.js';
-import {StatsDB} from './lib/statsDB.js';
 import {GAClient} from './lib/gaAPI.js';
 import {NotificationManager} from './lib/notificationManager.js';
-import {RecordTracker} from './lib/recordTracker.js';
 import {DataScheduler} from './lib/dataScheduler.js';
 
 export default class GASPExtension extends Extension {
@@ -13,15 +11,8 @@ export default class GASPExtension extends Extension {
         this._settings = this.getSettings();
 
         // Initialize components
-        this._statsDB = new StatsDB(this._settings, this._logger);
         this._gaClient = new GAClient(this._settings, this._logger);
         this._notificationManager = new NotificationManager(this._logger);
-        this._recordTracker = new RecordTracker(
-            this._settings,
-            this._statsDB,
-            this._notificationManager,
-            this._logger
-        );
         
         this._panelIndicator = addIndicator(
             this.metadata.uuid,
@@ -36,8 +27,7 @@ export default class GASPExtension extends Extension {
         this._dataScheduler = new DataScheduler(
             this._settings,
             this._gaClient,
-            this._recordTracker,
-            this._panelIndicator,
+            this._notificationManager,
             this._logger
         );
 
@@ -62,11 +52,6 @@ export default class GASPExtension extends Extension {
             this._panelIndicator = null;
         }
         
-        if (this._recordTracker) {
-            this._recordTracker.destroy();
-            this._recordTracker = null;
-        }
-        
         if (this._notificationManager) {
             this._notificationManager.destroy();
             this._notificationManager = null;
@@ -75,11 +60,6 @@ export default class GASPExtension extends Extension {
         if (this._gaClient) {
             this._gaClient.destroy();
             this._gaClient = null;
-        }
-        
-        if (this._statsDB) {
-            this._statsDB.destroy();
-            this._statsDB = null;
         }
         
         if (this._settingsChangedId) {
@@ -96,7 +76,7 @@ export default class GASPExtension extends Extension {
     _connectSignals() {
         this._settingsChangedId = this._settings.connect('changed::refresh-interval', () => {
             const interval = this._settings.get_int('refresh-interval');
-            this._logger.debug(`Refresh interval changed to ${interval}h, restarting scheduler`);
+            this._logger.debug(`Refresh interval changed to ${interval}m, restarting scheduler`);
             this._dataScheduler.start();
         });
     }
@@ -107,7 +87,5 @@ export default class GASPExtension extends Extension {
         }
     }
 }
-
-
 
 

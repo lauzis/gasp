@@ -5,6 +5,7 @@ import GLib from 'gi://GLib';
 import {ExtensionPreferences} from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
 import {GAClient} from './lib/gaAPI.js';
 import {Logger} from './lib/logger.js';
+import {getDependencyStatus} from './lib/dependencyChecker.js';
 
 export default class GASPPreferences extends ExtensionPreferences {
     fillPreferencesWindow(window) {
@@ -275,7 +276,7 @@ export default class GASPPreferences extends ExtensionPreferences {
                 
                 if (stats && stats.daily !== undefined && stats.daily >= 0) {
                     testStatusIcon.set_from_icon_name('emblem-ok-symbolic');
-                    testConnectionRow.set_subtitle(`✓ Success! Daily: ${stats.daily}, Weekly: ${stats.weekly}, Monthly: ${stats.monthly}`);
+                    testConnectionRow.set_subtitle(`✓ Success! Live: ${stats.live}, Daily: ${stats.daily}, Weekly: ${stats.weekly}, Monthly: ${stats.monthly}`);
                     // Mark API as connected on successful test
                     settings.set_boolean('api-connected', true);
                 } else {
@@ -321,6 +322,36 @@ export default class GASPPreferences extends ExtensionPreferences {
         // TODO: Add project selector dropdown (fetch from GA API)
         
         page.add(apiGroup);
+
+        // Dependencies Group
+        const dependenciesGroup = new Adw.PreferencesGroup({
+            title: 'Dependencies',
+            description: 'Verify required system tools',
+        });
+
+        const dependenciesRow = new Adw.ActionRow({
+            title: 'OpenSSL',
+        });
+
+        const dependenciesStatusIcon = new Gtk.Image({
+            valign: Gtk.Align.CENTER,
+            visible: false,
+        });
+
+        const updateDependencyStatus = () => {
+            const status = getDependencyStatus();
+            dependenciesRow.set_subtitle(status.message);
+            dependenciesStatusIcon.set_from_icon_name(
+                status.ok ? 'emblem-ok-symbolic' : 'dialog-error-symbolic'
+            );
+            dependenciesStatusIcon.visible = true;
+        };
+
+        dependenciesRow.add_suffix(dependenciesStatusIcon);
+        dependenciesGroup.add(dependenciesRow);
+        page.add(dependenciesGroup);
+
+        updateDependencyStatus();
         
         // Display Options Group
         const displayGroup = new Adw.PreferencesGroup({
@@ -330,10 +361,11 @@ export default class GASPPreferences extends ExtensionPreferences {
         
         const panelDisplayRow = new Adw.ComboRow({
             title: 'Panel Display',
-            subtitle: 'What stats to show next to the 📊 icon',
+            subtitle: 'What stats to show next to the panel icon',
         });
         
         const displayModel = new Gtk.StringList();
+        displayModel.append('Live');
         displayModel.append('Daily');
         displayModel.append('Weekly');
         displayModel.append('Monthly');
@@ -342,16 +374,37 @@ export default class GASPPreferences extends ExtensionPreferences {
         
         // Map current setting to index
         const currentDisplay = settings.get_string('panel-display');
-        const displayMap = {'daily': 0, 'weekly': 1, 'monthly': 2, 'nothing': 3};
+        const displayMap = {'live': 0, 'daily': 1, 'weekly': 2, 'monthly': 3, 'nothing': 4};
         panelDisplayRow.set_selected(displayMap[currentDisplay] || 0);
         
         panelDisplayRow.connect('notify::selected', () => {
             const selected = panelDisplayRow.get_selected();
-            const valueMap = ['daily', 'weekly', 'monthly', 'nothing'];
+            const valueMap = ['live', 'daily', 'weekly', 'monthly', 'nothing'];
             settings.set_string('panel-display', valueMap[selected]);
         });
         
         displayGroup.add(panelDisplayRow);
+
+        const iconSizeRow = new Adw.SpinRow({
+            title: 'Icon Size',
+            subtitle: 'Size in pixels for panel and menu icons',
+        });
+        const iconSizeAdjustment = new Gtk.Adjustment({
+            lower: 16,
+            upper: 64,
+            step_increment: 1,
+            page_increment: 4,
+            value: settings.get_int('icon-size') || 24,
+        });
+        iconSizeRow.set_adjustment(iconSizeAdjustment);
+        iconSizeRow.connect('notify::value', () => {
+            settings.set_int('icon-size', iconSizeRow.get_value());
+        });
+        settings.connect('changed::icon-size', () => {
+            const value = settings.get_int('icon-size') || 24;
+            iconSizeRow.set_value(value);
+        });
+        displayGroup.add(iconSizeRow);
         
         page.add(displayGroup);
         
@@ -367,6 +420,7 @@ export default class GASPPreferences extends ExtensionPreferences {
         });
         
         const intervalModel = new Gtk.StringList();
+        intervalModel.append('Every 30 Minutes');
         intervalModel.append('Every Hour');
         intervalModel.append('Every 2 Hours');
         intervalModel.append('Every 4 Hours');
@@ -376,13 +430,17 @@ export default class GASPPreferences extends ExtensionPreferences {
         refreshIntervalRow.set_model(intervalModel);
         
         // Map current setting to index
-        const currentInterval = settings.get_int('refresh-interval');
-        const intervalMap = {1: 0, 2: 1, 4: 2, 8: 3, 12: 4, 24: 5};
+        let currentInterval = settings.get_int('refresh-interval');
+        if (currentInterval > 0 && currentInterval < 30) {
+            currentInterval *= 60;
+            settings.set_int('refresh-interval', currentInterval);
+        }
+        const intervalMap = {30: 0, 60: 1, 120: 2, 240: 3, 480: 4, 720: 5, 1440: 6};
         refreshIntervalRow.set_selected(intervalMap[currentInterval] || 0);
         
         refreshIntervalRow.connect('notify::selected', () => {
             const selected = refreshIntervalRow.get_selected();
-            const valueMap = [1, 2, 4, 8, 12, 24];
+            const valueMap = [30, 60, 120, 240, 480, 720, 1440];
             settings.set_int('refresh-interval', valueMap[selected]);
         });
         
@@ -425,16 +483,25 @@ export default class GASPPreferences extends ExtensionPreferences {
                 if (response === 'clear') {
                     // Clear database - we need to trigger this via a setting that the extension watches
                     settings.set_int('current-daily', 0);
+                    settings.set_int('current-live', 0);
                     settings.set_int('current-weekly', 0);
                     settings.set_int('current-monthly', 0);
                     settings.set_int('record-daily', 0);
+                    settings.set_int('record-live', 0);
                     settings.set_int('record-weekly', 0);
                     settings.set_int('record-monthly', 0);
+                    settings.set_int('last-notified-daily', 0);
+                    settings.set_int('last-notified-live', 0);
+                    settings.set_int('last-notified-weekly', 0);
+                    settings.set_int('last-notified-monthly', 0);
                     settings.set_string('last-update', '');
-                    
-                    // Signal the extension to clear the database file
-                    // We'll use a timestamp to trigger the clear
-                    settings.set_string('db-path', ''); // This will trigger db recreation
+                    settings.set_string('last-period-daily', '');
+                    settings.set_string('last-period-weekly', '');
+                    settings.set_string('last-period-monthly', '');
+                    settings.set_string('last-record-daily', '');
+                    settings.set_string('last-record-live', '');
+                    settings.set_string('last-record-weekly', '');
+                    settings.set_string('last-record-monthly', '');
                 }
             });
             

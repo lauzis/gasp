@@ -151,8 +151,8 @@ POST https://analyticsdata.googleapis.com/v1beta/properties/{propertyId}:runRepo
 
 ### Date Ranges
 - **Daily**: today → today
-- **Weekly**: 7daysAgo → today
-- **Monthly**: 30daysAgo → today
+- **Weekly**: start of the calendar week (Monday) → today
+- **Monthly**: start of the calendar month → today
 
 ### Dependencies
 - **OpenSSL**: Required for RSA signing (usually pre-installed on Linux)

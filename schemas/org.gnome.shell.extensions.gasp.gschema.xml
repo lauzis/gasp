@@ -25,15 +25,22 @@
     <key name="panel-display" type="s">
       <default>'daily'</default>
       <summary>Panel Display Mode</summary>
-      <description>What to show in panel: daily, weekly, monthly, or nothing</description>
+      <description>What to show in panel: live, daily, weekly, monthly, or nothing</description>
+    </key>
+
+    <key name="icon-size" type="i">
+      <default>24</default>
+      <summary>Icon Size</summary>
+      <description>Size in pixels for panel and menu icons</description>
+      <range min="16" max="64"/>
     </key>
     
     <!-- Refresh Interval -->
     <key name="refresh-interval" type="i">
-      <default>1</default>
+      <default>60</default>
       <summary>Refresh Interval</summary>
-      <description>How often to refresh data in hours (1, 2, 4, 8, 12, 24)</description>
-      <range min="1" max="24"/>
+      <description>How often to refresh data in minutes (30, 60, 120, 240, 480, 720, 1440)</description>
+      <range min="30" max="1440"/>
     </key>
     
     <!-- Current Stats Cache -->
@@ -41,6 +48,12 @@
       <default>0</default>
       <summary>Current Daily Visitors</summary>
       <description>Current day visitor count</description>
+    </key>
+
+    <key name="current-live" type="i">
+      <default>0</default>
+      <summary>Current Live Visitors</summary>
+      <description>Visitors in the most recent refresh window</description>
     </key>
     
     <key name="current-weekly" type="i">
@@ -59,19 +72,84 @@
     <key name="record-daily" type="i">
       <default>0</default>
       <summary>Daily Visitor Peak</summary>
-      <description>All-time daily visitor peak</description>
+      <description>Highest daily visitor count from completed periods</description>
+    </key>
+    <key name="last-notified-daily" type="i">
+      <default>0</default>
+      <summary>Last daily record value notified</summary>
+      <description>Last daily record value that triggered a notification</description>
+    </key>
+    <key name="last-record-daily" type="s">
+      <default>''</default>
+      <summary>Timestamp of last daily record</summary>
+      <description>Timestamp when the daily record was last updated</description>
+    </key>
+
+    <key name="record-live" type="i">
+      <default>0</default>
+      <summary>Live Visitor Peak</summary>
+      <description>Highest live visitor count within a refresh window</description>
+    </key>
+    <key name="last-notified-live" type="i">
+      <default>0</default>
+      <summary>Last live record value notified</summary>
+      <description>Last live record value that triggered a notification</description>
+    </key>
+    <key name="last-record-live" type="s">
+      <default>''</default>
+      <summary>Timestamp of last live record</summary>
+      <description>Timestamp when the live record was last updated</description>
     </key>
     
     <key name="record-weekly" type="i">
       <default>0</default>
       <summary>Weekly Visitor Peak</summary>
-      <description>All-time weekly visitor peak</description>
+      <description>Highest weekly visitor count from completed periods</description>
+    </key>
+    <key name="last-notified-weekly" type="i">
+      <default>0</default>
+      <summary>Last weekly record value notified</summary>
+      <description>Last weekly record value that triggered a notification</description>
+    </key>
+    <key name="last-record-weekly" type="s">
+      <default>''</default>
+      <summary>Timestamp of last weekly record</summary>
+      <description>Timestamp when the weekly record was last updated</description>
     </key>
     
     <key name="record-monthly" type="i">
       <default>0</default>
       <summary>Monthly Visitor Peak</summary>
-      <description>All-time monthly visitor peak</description>
+      <description>Highest monthly visitor count from completed periods</description>
+    </key>
+    <key name="last-notified-monthly" type="i">
+      <default>0</default>
+      <summary>Last monthly record value notified</summary>
+      <description>Last monthly record value that triggered a notification</description>
+    </key>
+    <key name="last-record-monthly" type="s">
+      <default>''</default>
+      <summary>Timestamp of last monthly record</summary>
+      <description>Timestamp when the monthly record was last updated</description>
+    </key>
+
+    <!-- Period Start Tracking -->
+    <key name="last-period-daily" type="s">
+      <default>''</default>
+      <summary>Last Daily Period Start</summary>
+      <description>Timestamp of the current daily period start</description>
+    </key>
+
+    <key name="last-period-weekly" type="s">
+      <default>''</default>
+      <summary>Last Weekly Period Start</summary>
+      <description>Timestamp of the current weekly period start</description>
+    </key>
+
+    <key name="last-period-monthly" type="s">
+      <default>''</default>
+      <summary>Last Monthly Period Start</summary>
+      <description>Timestamp of the current monthly period start</description>
     </key>
     
     <!-- Last Update Timestamp -->
@@ -86,13 +164,6 @@
       <default>false</default>
       <summary>API Connected</summary>
       <description>Whether API has successfully connected and retrieved data</description>
-    </key>
-    
-    <!-- Database Path -->
-    <key name="db-path" type="s">
-      <default>''</default>
-      <summary>Database Path</summary>
-      <description>Path to SQLite database file</description>
     </key>
     
   </schema>

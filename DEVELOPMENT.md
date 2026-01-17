@@ -8,26 +8,22 @@
 - [x] Project structure and configuration
 - [x] Metadata with proper description
 - [x] GSettings schema with all required fields
-- [x] Schema compiled successfully
 - [x] Complete documentation
-- [x] .gitignore configured
 
 **All Components Implemented:**
 1. **PanelIndicator** (lib/panelIndicator.js) - Panel icon, stats display, dropdown menu
-2. **StatsDB** (lib/statsDB.js) - JSON-based storage for statistics
-3. **GAClient** (lib/gaAPI.js) - Google Analytics Data API v1 integration
-4. **RecordTracker** (lib/recordTracker.js) - Peak detection logic
-5. **NotificationManager** (lib/notificationManager.js) - Celebration notifications
-6. **DataScheduler** (lib/dataScheduler.js) - Periodic data refresh
-7. **Main Extension** (extension.js) - Component orchestration
-8. **Preferences UI** (prefs.js) - GTK4/Adwaita settings interface
+2. **GAClient** (lib/gaAPI.js) - Google Analytics Data API v1beta integration
+3. **NotificationManager** (lib/notificationManager.js) - Celebration notifications
+4. **DataScheduler** (lib/dataScheduler.js) - Periodic data refresh and peak detection
+5. **Main Extension** (extension.js) - Component orchestration
+6. **Preferences UI** (prefs.js) - GTK4/Adwaita settings interface
 
 **Google Analytics API Integration:**
 - ✅ Service Account authentication with OAuth 2.0 JWT
 - ✅ RSA-SHA256 signing using OpenSSL
 - ✅ Token caching and automatic refresh
 - ✅ Parallel data fetching (daily/weekly/monthly)
-- ✅ Error handling with fallback to zeros
+- ✅ Error handling with fallback to last known values when possible
 - ✅ Test connection button with validation
 - ✅ Confirmation dialog before clearing stats
 
@@ -54,27 +50,24 @@
          │
          ├──► PanelIndicator ──► UI in top panel
          │
-         ├──► DataScheduler ──► Periodic refresh
-         │         │
-         │         └──► GAClient ──► Google Analytics API
-         │                   │
-         │                   └──► OAuth 2.0 JWT auth
-         │
-         ├──► StatsDB ──► JSON storage
-         │
-         ├──► RecordTracker ──► Peak detection
-         │
-         └──► NotificationManager ──► GNOME notifications
+        ├──► DataScheduler ──► Periodic refresh
+        │         │
+        │         └──► GAClient ──► Google Analytics API
+        │                   │
+        │                   └──► OAuth 2.0 JWT auth
+        │
+        └──► NotificationManager ──► GNOME notifications
 ```
 
 ### Data Flow
 
 1. **Scheduler** triggers refresh at configured interval
 2. **GAClient** authenticates and fetches data from Google Analytics
-3. **StatsDB** saves data and detects if new records were set
-4. **RecordTracker** coordinates between DB and notifications
-5. **NotificationManager** sends celebration notifications for new records
-6. **PanelIndicator** updates display with latest stats
+3. **DataScheduler** detects period rollover and updates stored peaks
+4. **NotificationManager** sends celebration notifications for new records
+5. **PanelIndicator** updates display with latest stats
+
+**Record seeding:** If a peak is 0, fetch the previous day/week/month once and set it.
 
 ## Google Analytics API Implementation
 
@@ -111,80 +104,56 @@ Content-Type: application/json
 }
 ```
 
+**Realtime Data (Live):**
+```
+POST https://analyticsdata.googleapis.com/v1beta/properties/{propertyId}:runRealtimeReport
+Authorization: Bearer {access_token}
+Content-Type: application/json
+
+{
+  "metrics": [{ "name": "activeUsers" }],
+  "minuteRanges": [{ "startMinutesAgo": 29, "endMinutesAgo": 0 }]
+}
+```
+
 ### Date Ranges
 - **Daily**: `today` to `today`
-- **Weekly**: `7daysAgo` to `today`
-- **Monthly**: `30daysAgo` to `today`
+- **Weekly**: `week start` to `today` (calendar week)
+- **Monthly**: `month start` to `today` (calendar month)
+- **Live**: Realtime API window (up to last 30 minutes)
 
 ### Error Handling
 
-The implementation includes robust error handling:
+Error handling:
 1. **Invalid Credentials**: Validates JSON format and required fields
 2. **Network Errors**: Catches and logs HTTP errors
 3. **API Errors**: Parses Google API error messages
 4. **Token Expiry**: Automatically refreshes expired tokens
-5. **Fallback Mode**: Returns zeros if API unavailable
-
-## Database Schema
-
-### JSON Structure
-
-Stored in `~/.local/share/gasp/stats.json`:
-
-```json
-{
-  "records": [
-    {
-      "timestamp": "2026-01-15T19:00:00.000Z",
-      "daily_count": 125,
-      "weekly_count": 847,
-      "monthly_count": 3421,
-      "project_id": "default",
-      "is_daily_record": false,
-      "is_weekly_record": true,
-      "is_monthly_record": false
-    }
-  ],
-  "metadata": {
-    "created": "2026-01-15T18:00:00.000Z",
-    "version": 1
-  }
-}
-```
-
-### Fields
-- **timestamp**: When the data was recorded
-- **{period}_count**: Visitor counts for each period
-- **project_id**: Which GA property the data is from
-- **is_{period}_record**: Whether this was a peak
-
-Database automatically keeps the most recent 1000 records to prevent bloat.
+5. **Fallback Mode**: Keeps last known values when possible; zeros when not configured
+6. **Dependencies Missing**: Skips data fetch when OpenSSL is unavailable
 
 ## File Structure
 
 ```
 gasp@gudlenieks.lv/
-├── extension.js              (133 lines) - Main extension
-├── prefs.js                  (169 lines) - Preferences UI
+├── extension.js              - Main extension
+├── prefs.js                  - Preferences UI
 ├── lib/
-│   ├── logger.js            (35 lines)  - Logging utility
-│   ├── panelIndicator.js    (189 lines) - Panel UI
-│   ├── statsDB.js           (197 lines) - Data storage
-│   ├── gaAPI.js             (250+ lines) - GA API client with OAuth
-│   ├── notificationManager.js (83 lines) - Notifications
-│   ├── recordTracker.js     (50 lines)  - Record detection
-│   └── dataScheduler.js     (122 lines) - Periodic refresh
+│   ├── logger.js            - Logging utility
+│   ├── panelIndicator.js    - Panel UI
+│   ├── gaAPI.js             - GA API client with OAuth
+│   ├── notificationManager.js - Notifications
+│   └── dataScheduler.js     - Periodic refresh
 ├── schemas/
 │   └── org.gnome.shell.extensions.gasp.gschema.xml
 ├── metadata.json
-├── icon.png
+├── icons/
 ├── stylesheet.css
 ├── README.md
 ├── GOOGLE_ANALYTICS_SETUP.md
 ├── DEVELOPMENT.md (this file)
 └── LICENSE
 
-Total: ~1,500+ lines of code
 ```
 
 ## Dependencies
@@ -193,6 +162,7 @@ Total: ~1,500+ lines of code
 - **GNOME Shell**: 45, 46, 47, 48, 49
 - **OpenSSL**: Required for RSA signing (usually pre-installed)
 - **libsoup3**: HTTP client (provided by GNOME Shell)
+- **Dependency Check**: Preferences UI can recheck availability (Settings → Dependencies)
 
 ### JavaScript Modules
 - `gi://Soup` - HTTP requests
@@ -223,11 +193,6 @@ gnome-extensions info gasp@gudlenieks.lv
 **View stored settings:**
 ```bash
 gsettings list-recursively org.gnome.shell.extensions.gasp
-```
-
-**Check database file:**
-```bash
-cat ~/.local/share/gasp/stats.json | jq .
 ```
 
 ### Making Changes
@@ -272,12 +237,12 @@ glib-compile-schemas .
 ### Version 1.0.0 (January 2026)
 
 **Initial Release:**
-- Full Google Analytics Data API v1 integration
+- Full Google Analytics Data API v1beta integration
 - Service Account authentication (OAuth 2.0 JWT)
 - Panel indicator with stats display
 - Peak tracking and notifications
-- Persistent JSON storage
-- Configurable refresh intervals
+- Persistent GSettings storage
+- Configurable refresh intervals (30m, 1h, 2h, 4h, 8h, 12h, 24h)
 - GTK4 preferences UI
 - Test connection functionality
 - Comprehensive documentation

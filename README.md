@@ -4,22 +4,23 @@
 
 A GNOME Shell extension that displays Google Analytics visitor statistics in your panel and notifies you when you break peaks. Track daily, weekly, and monthly visitor counts at a glance.
 
-![GASP Icon](icon.png)
+![GASP Screenshot](git-images/gasp.png)
 
 ## Features
 
 ### Panel Display
 - **📊 Chart Icon** in the top panel
-- **Real-time Stats** - Shows current visitor count next to icon
-- **Flexible Display** - Choose to show Daily, Weekly, Monthly, or no stats in panel
+- **Live Stats** - Shows current visitor count next to icon
+- **Flexible Display** - Choose to show Live, Daily, Weekly, Monthly, or no stats in panel
 - **Click to View** - Dropdown menu with detailed statistics
 
 ### Statistics Tracking
+- **Live Visitors** - Track visitors in the most recent refresh window (up to 30 minutes)
 - **Daily Visitors** - Track today's visitor count vs. all-time peak
 - **Weekly Visitors** - Track this week's count vs. peak
 - **Monthly Visitors** - Track this month's count vs. peak
-- **Historical Peaks** - JSON database stores all peaks with timestamps
-- **Multiple Projects** - Support for tracking different Google Analytics properties (ready)
+- **Historical Peaks** - Stored in GSettings from completed periods
+- **Record Seeding** - If a peak is 0, use the previous day/week/month once to fill it
 
 ### Notifications
 - **🎉 Peak Alerts** - Get notified when you break a peak
@@ -28,9 +29,10 @@ A GNOME Shell extension that displays Google Analytics visitor statistics in you
 
 ### Settings
 - **Google Analytics API** - Configure credentials and connect to GA
-- **Project Selection** - Choose which GA property to track
-- **Auto-refresh** - Set update interval (1h, 2h, 4h, 8h, 12h, 24h)
+- **Dependencies** - Verify required system tools (OpenSSL)
+- **Auto-refresh** - Set update interval (30m, 1h, 2h, 4h, 8h, 12h, 24h)
 - **Panel Display Options** - Choose what stats to display
+- **Icon Size** - Adjust the panel/menu icon size
 - **Clear Peaks** - Reset peak history when needed
 - **Force Refresh** - Manually trigger data update
 
@@ -86,8 +88,8 @@ On first enable without credentials:
    - ✅ Green checkmark = Success!
 
 3. **Choose Display Options:**
-   - Select what to show in panel (Daily/Weekly/Monthly/Nothing)
-   - Set your preferred refresh interval (1h to 24h)
+   - Select what to show in panel (Live/Daily/Weekly/Monthly/Nothing)
+   - Set your preferred refresh interval (30m to 24h)
    - Click "Force Refresh" to get initial data
 
 4. **Track Your Stats:**
@@ -99,59 +101,24 @@ On first enable without credentials:
 
 ## How It Works
 
-1. **Authentication**: Extension uses OAuth 2.0 JWT with Service Account credentials
-2. **Data Collection**: Fetches real visitor data from Google Analytics Data API v1
-3. **Peak Storage**: Stats saved to JSON database with timestamps (`~/.local/share/gasp/stats.json`)
-4. **Comparison**: Current stats compared against historical peaks
-5. **Notifications**: When a new peak is detected, you get a celebration notification (🎉/🥳)
-6. **Display**: Panel shows your chosen metric (daily/weekly/monthly) with current count
+1. **Auth**: Service Account JSON + OAuth 2.0 JWT
+2. **Fetch**: Pulls data from Google Analytics Data API v1beta
+3. **Store Peaks**: GSettings keeps completed-period peaks
+4. **Seed Peaks**: If a peak is 0, use the previous period once
+5. **Compare**: Current stats vs stored peaks
+6. **Notify**: Show a notification when a new peak happens
+7. **Display**: Panel shows the selected metric
+
+**Note:** If OpenSSL is missing, fetch is skipped.
 
 ### Dropdown Menu Format
 
 Each line shows: `[emoji] Period: Peak / Current`
 
-- **🏆 Trophy**: Current value equals or exceeds peak
-- **📈 Chart**: Current value is below peak
-- **Example**: `🏆 Daily: 150 / 150` (at peak!)
-- **Example**: `📈 Weekly: 950 / 847` (below peak)
-
-## Database Schema
-
-The extension stores data in a local JSON file (`~/.local/share/gasp/stats.json`):
-
-**Structure:**
-```json
-{
-  "records": [
-    {
-      "timestamp": "2026-01-15T19:00:00.000Z",
-      "daily_count": 125,
-      "weekly_count": 847,
-      "monthly_count": 3421,
-      "project_id": "default",
-      "is_daily_record": false,
-      "is_weekly_record": true,
-      "is_monthly_record": false
-    }
-  ],
-  "metadata": {
-    "created": "2026-01-15T18:00:00.000Z",
-    "version": 1
-  }
-}
-```
-
-**Fields:**
-- **timestamp** - When the data was recorded
-- **daily_count** - Visitors for that day
-- **weekly_count** - Visitors for that week  
-- **monthly_count** - Visitors for that month
-- **project_id** - Which GA property the data is from
-- **is_daily_record** - Whether this was a daily peak
-- **is_weekly_record** - Whether this was a weekly peak
-- **is_monthly_record** - Whether this was a monthly peak
-
-The database automatically keeps the most recent 1000 records to prevent bloat.
+- **Trophy icon**: Current value equals or exceeds peak
+- **Chart icon**: Current value is below peak
+- **Example**: `Live: 12 / 12` (at peak)
+- **Example**: `Weekly: 950 / 847` (below peak)
 
 ## Technical Details
 
@@ -174,57 +141,20 @@ The database automatically keeps the most recent 1000 records to prevent bloat.
 - `lib/logger.js` - Logging utilities with debug mode support
 - `lib/panelIndicator.js` - Panel UI and dropdown menu
 - `lib/gaAPI.js` - Google Analytics API client with OAuth 2.0 JWT
-- `lib/statsDB.js` - JSON database manager for statistics
-- `lib/recordTracker.js` - Peak comparison and detection logic
 - `lib/notificationManager.js` - Celebration notifications with throttling
 - `lib/dataScheduler.js` - Periodic data refresh scheduler
-
-**Total:** ~1,500+ lines of JavaScript code across 8 modules.
 
 For detailed technical information, see [DEVELOPMENT.md](DEVELOPMENT.md).
 
 ## Development
 
-### Testing the Extension
-
-View logs in real-time:
-```bash
-journalctl -f -o cat /usr/bin/gnome-shell | grep gasp
-```
-
-Enable debug mode (verbose logging):
-```bash
-G_MESSAGES_DEBUG=gasp gnome-shell --replace
-```
-
-### Debugging
-
-Check extension status:
-```bash
-gnome-extensions info gasp@gudlenieks.lv
-```
-
-View stored settings:
-```bash
-gsettings list-recursively org.gnome.shell.extensions.gasp
-```
-
-Check database file:
-```bash
-cat ~/.local/share/gasp/stats.json | jq .
-```
-
-Force refresh from command line:
-```bash
-# Change any setting to trigger a refresh
-gsettings set org.gnome.shell.extensions.gasp refresh-interval 1
-```
+Developer notes, troubleshooting, and commands live in [DEVELOPMENT.md](DEVELOPMENT.md).
 
 ## Privacy
 
 - All data is stored locally on your machine
 - No data is sent to third parties (only Google Analytics API for fetching your own data)
-- API credentials are stored securely in GSettings
+- API credentials are stored locally in GSettings (not encrypted)
 - You control what data is tracked and displayed
 
 ## Compatibility
@@ -264,9 +194,9 @@ gsettings set org.gnome.shell.extensions.gasp refresh-interval 1
 - Trophy 🏆 and chart 📈 emoji indicators
 - Peak detection and tracking
 - Celebration notifications (🎉/🥳) with smart time formatting
-- JSON database for historical data storage
-- Configurable refresh intervals (1h, 2h, 4h, 8h, 12h, 24h)
-- Panel display options (Daily/Weekly/Monthly/Nothing)
+- GSettings-based peak storage for completed periods
+- Configurable refresh intervals (30m, 1h, 2h, 4h, 8h, 12h, 24h)
+- Panel display options (Live/Daily/Weekly/Monthly/Nothing)
 - Force refresh capability
 - Clear peaks with confirmation dialog
 - Complete GTK4 preferences UI
@@ -274,7 +204,7 @@ gsettings set org.gnome.shell.extensions.gasp refresh-interval 1
 ✅ **Google Analytics Integration:**
 - Service Account authentication (OAuth 2.0 JWT)
 - RSA-SHA256 signing using OpenSSL
-- Real-time data from Google Analytics Data API v1
+- Real-time data from Google Analytics Data API v1beta
 - Token caching and automatic refresh
 - Parallel data fetching for better performance
 - Test connection button with validation
