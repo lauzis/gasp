@@ -30,7 +30,7 @@ export default class GASPPreferences extends ExtensionPreferences {
             show_apply_button: true,
         });
 
-        const privateKeyRow = new Adw.EntryRow({
+        const privateKeyRow = new Adw.PasswordEntryRow({
             title: 'Private Key',
             show_apply_button: true,
         });
@@ -173,18 +173,6 @@ export default class GASPPreferences extends ExtensionPreferences {
         apiKeyRow.add_suffix(uploadButton);
         
         apiGroup.add(apiKeyRow);
-
-        clientEmailRow.connect('apply', () => {
-            saveMinimalCredentials(clientEmailRow.get_text(), privateKeyRow.get_text());
-        });
-
-        apiGroup.add(clientEmailRow);
-
-        privateKeyRow.connect('apply', () => {
-            saveMinimalCredentials(clientEmailRow.get_text(), privateKeyRow.get_text());
-        });
-
-        apiGroup.add(privateKeyRow);
         
         const apiHelpRow = new Adw.ActionRow({
             title: 'How to get credentials',
@@ -233,6 +221,18 @@ export default class GASPPreferences extends ExtensionPreferences {
         apiHelpRow.set_activatable_widget(apiHelpButton);
         
         apiGroup.add(apiHelpRow);
+
+        clientEmailRow.connect('apply', () => {
+            saveMinimalCredentials(clientEmailRow.get_text(), privateKeyRow.get_text());
+        });
+
+        apiGroup.add(clientEmailRow);
+
+        privateKeyRow.connect('apply', () => {
+            saveMinimalCredentials(clientEmailRow.get_text(), privateKeyRow.get_text());
+        });
+
+        apiGroup.add(privateKeyRow);
 
         const storedCredentials = parseStoredCredentials();
         if (storedCredentials.clientEmail || storedCredentials.privateKey) {
