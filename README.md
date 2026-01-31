@@ -30,6 +30,7 @@ A GNOME Shell extension that displays Google Analytics visitor statistics in you
 ### Settings
 - **Google Analytics API** - Configure credentials and connect to GA
 - **Dependencies** - Verify required system tools (OpenSSL)
+- **Credential Storage** - Choose GSettings (plain) or Keyring
 - **Auto-refresh** - Set update interval (30m, 1h, 2h, 4h, 8h, 12h, 24h)
 - **Panel Display Options** - Choose what stats to display
 - **Icon Size** - Adjust the panel/menu icon size
@@ -155,7 +156,7 @@ Developer notes, troubleshooting, and commands live in [DEVELOPMENT.md](DEVELOPM
 
 - All data is stored locally on your machine
 - No data is sent to third parties (only Google Analytics API for fetching your own data)
-- API credentials are stored locally in GSettings (not encrypted). Only `client_email` and `private_key` are saved.
+- API credentials are stored locally in GSettings (not encrypted) or the keyring, based on your setting. Only `client_email` and `private_key` are saved.
 - You control what data is tracked and displayed
 
 ## Compatibility

@@ -20,6 +20,12 @@
       <summary>Project Name</summary>
       <description>Display name of the tracked project</description>
     </key>
+
+    <key name="credential-storage" type="s">
+      <default>'keyring'</default>
+      <summary>Credential Storage</summary>
+      <description>Where to store service account credentials: gsettings or keyring</description>
+    </key>
     
     <!-- Display Options -->
     <key name="panel-display" type="s">

@@ -163,6 +163,7 @@ gasp@gudlenieks.lv/
 - **OpenSSL**: Required for RSA signing (usually pre-installed)
 - **libsoup3**: HTTP client (provided by GNOME Shell)
 - **Dependency Check**: Preferences UI can recheck availability (Settings → Dependencies)
+- **Keyring (optional)**: Used if credential storage is set to Keyring
 
 ### JavaScript Modules
 - `gi://Soup` - HTTP requests

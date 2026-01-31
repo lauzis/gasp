@@ -6,6 +6,17 @@ import {ExtensionPreferences} from 'resource:///org/gnome/Shell/Extensions/js/ex
 import {GAClient} from './lib/gaAPI.js';
 import {Logger} from './lib/logger.js';
 import {getDependencyStatus} from './lib/dependencyChecker.js';
+import {
+    getCredentialStorageMode,
+    loadCredentials,
+    storeCredentialsInSettings,
+    storeCredentialsInKeyring,
+    clearCredentialsInSettings,
+    clearCredentialsInKeyring,
+    getCredentialsFromSettings,
+    getCredentialsFromKeyring,
+    isKeyringAvailable,
+} from './lib/credentialStore.js';
 
 export default class GASPPreferences extends ExtensionPreferences {
     fillPreferencesWindow(window) {
@@ -35,27 +46,12 @@ export default class GASPPreferences extends ExtensionPreferences {
             show_apply_button: true,
         });
 
-        const parseStoredCredentials = () => {
-            const raw = settings.get_string('ga-api-key').trim();
-            if (!raw) {
-                return {clientEmail: '', privateKey: ''};
-            }
-            try {
-                const parsed = JSON.parse(raw);
-                return {
-                    clientEmail: parsed.client_email || '',
-                    privateKey: parsed.private_key || '',
-                };
-            } catch (e) {
-                return {clientEmail: '', privateKey: ''};
-            }
-        };
-
         const saveMinimalCredentials = (clientEmail, privateKey) => {
             const email = clientEmail.trim();
             const key = privateKey.trim();
             if (!email && !key) {
-                settings.set_string('ga-api-key', '');
+                clearCredentialsInSettings(settings);
+                clearCredentialsInKeyring();
                 apiKeyRow.set_text('');
                 return true;
             }
@@ -63,12 +59,19 @@ export default class GASPPreferences extends ExtensionPreferences {
                 this._showError(window, 'Both client_email and private_key are required.');
                 return false;
             }
-
-            const minimal = JSON.stringify({
-                client_email: email,
-                private_key: key,
-            });
-            settings.set_string('ga-api-key', minimal);
+            const mode = getCredentialStorageMode(settings);
+            if (mode === 'keyring') {
+                try {
+                    storeCredentialsInKeyring(email, key);
+                    clearCredentialsInSettings(settings);
+                } catch (e) {
+                    this._showError(window, 'Failed to store credentials in keyring.');
+                    return false;
+                }
+            } else {
+                storeCredentialsInSettings(settings, email, key);
+                clearCredentialsInKeyring();
+            }
             apiKeyRow.set_text('');
             return true;
         };
@@ -76,7 +79,8 @@ export default class GASPPreferences extends ExtensionPreferences {
         const saveServiceAccountJson = (jsonText) => {
             const trimmed = jsonText.trim();
             if (!trimmed) {
-                settings.set_string('ga-api-key', '');
+                clearCredentialsInSettings(settings);
+                clearCredentialsInKeyring();
                 return true;
             }
 
@@ -234,11 +238,33 @@ export default class GASPPreferences extends ExtensionPreferences {
 
         apiGroup.add(privateKeyRow);
 
-        const storedCredentials = parseStoredCredentials();
-        if (storedCredentials.clientEmail || storedCredentials.privateKey) {
-            clientEmailRow.set_text(storedCredentials.clientEmail);
-            privateKeyRow.set_text(storedCredentials.privateKey);
+        const storedCredentials = loadCredentials(settings);
+        if (storedCredentials) {
+            clientEmailRow.set_text(storedCredentials.client_email);
+            privateKeyRow.set_text(storedCredentials.private_key);
         }
+
+        const migrateToKeyringIfNeeded = () => {
+            if (getCredentialStorageMode(settings) !== 'keyring') {
+                return;
+            }
+            if (!isKeyringAvailable()) {
+                settings.set_string('credential-storage', 'gsettings');
+                return;
+            }
+            const fromSettings = getCredentialsFromSettings(settings);
+            const fromKeyring = getCredentialsFromKeyring();
+            if (!fromKeyring && fromSettings) {
+                try {
+                    storeCredentialsInKeyring(fromSettings.client_email, fromSettings.private_key);
+                    clearCredentialsInSettings(settings);
+                } catch (e) {
+                    settings.set_string('credential-storage', 'gsettings');
+                }
+            }
+        };
+
+        migrateToKeyringIfNeeded();
         
         const propertyIdRow = new Adw.EntryRow({
             title: 'Property ID',
@@ -280,10 +306,10 @@ export default class GASPPreferences extends ExtensionPreferences {
         });
         
         testButton.connect('clicked', async () => {
-            const serviceAccountJson = settings.get_string('ga-api-key');
+            const credentials = loadCredentials(settings);
             const propertyId = settings.get_string('ga-property-id');
             
-            if (!serviceAccountJson || !propertyId) {
+            if (!credentials || !propertyId) {
                 testStatusIcon.set_from_icon_name('dialog-error-symbolic');
                 testStatusIcon.visible = true;
                 testConnectionRow.set_subtitle('Please enter both credentials and Property ID');
@@ -295,37 +321,10 @@ export default class GASPPreferences extends ExtensionPreferences {
                 return;
             }
             
-            // Check if it's an API key (which won't work)
-            if (serviceAccountJson.startsWith('AIza')) {
-                testStatusIcon.set_from_icon_name('dialog-warning-symbolic');
-                testStatusIcon.visible = true;
-                testConnectionRow.set_subtitle('⚠️  API keys are not supported. Need Service Account JSON.');
-                GLib.timeout_add(GLib.PRIORITY_DEFAULT, 5000, () => {
-                    testStatusIcon.visible = false;
-                    testConnectionRow.set_subtitle('Verify your Google Analytics credentials');
-                    return GLib.SOURCE_REMOVE;
-                });
-                return;
-            }
-            
-            // Validate JSON format
-            try {
-                const parsed = JSON.parse(serviceAccountJson);
-                if (!parsed.private_key || !parsed.client_email) {
-                    testStatusIcon.set_from_icon_name('dialog-error-symbolic');
-                    testStatusIcon.visible = true;
-                    testConnectionRow.set_subtitle('Invalid JSON: missing private_key or client_email');
-                    GLib.timeout_add(GLib.PRIORITY_DEFAULT, 3000, () => {
-                        testStatusIcon.visible = false;
-                        testConnectionRow.set_subtitle('Verify your Google Analytics credentials');
-                        return GLib.SOURCE_REMOVE;
-                    });
-                    return;
-                }
-            } catch (e) {
+            if (!credentials.private_key || !credentials.client_email) {
                 testStatusIcon.set_from_icon_name('dialog-error-symbolic');
                 testStatusIcon.visible = true;
-                testConnectionRow.set_subtitle('Invalid JSON format - paste the entire JSON file content');
+                testConnectionRow.set_subtitle('Missing client_email or private_key');
                 GLib.timeout_add(GLib.PRIORITY_DEFAULT, 3000, () => {
                     testStatusIcon.visible = false;
                     testConnectionRow.set_subtitle('Verify your Google Analytics credentials');
@@ -586,6 +585,67 @@ export default class GASPPreferences extends ExtensionPreferences {
         
         page.add(displayGroup);
         page.add(refreshGroup);
+
+        // Credential Storage Group
+        const storageGroup = new Adw.PreferencesGroup({
+            title: 'Credential Storage',
+            description: 'Choose where to store your credentials',
+        });
+
+        const storageRow = new Adw.ComboRow({
+            title: 'Storage',
+            subtitle: 'GSettings (plain) or Keyring',
+        });
+
+        const storageModel = new Gtk.StringList();
+        storageModel.append('GSettings (plain)');
+        storageModel.append('Keyring');
+        storageRow.set_model(storageModel);
+
+        const storageMap = { gsettings: 0, keyring: 1 };
+        const currentStorage = getCredentialStorageMode(settings);
+        storageRow.set_selected(storageMap[currentStorage] ?? 0);
+
+        storageRow.connect('notify::selected', () => {
+            const selected = storageRow.get_selected();
+            const mode = selected === 1 ? 'keyring' : 'gsettings';
+            const previousCredentials =
+                getCredentialsFromSettings(settings) || getCredentialsFromKeyring();
+
+            if (mode === 'keyring' && !isKeyringAvailable()) {
+                this._showError(window, 'Keyring is not available. Keeping GSettings.');
+                storageRow.set_selected(0);
+                settings.set_string('credential-storage', 'gsettings');
+                if (previousCredentials) {
+                    saveMinimalCredentials(
+                        previousCredentials.client_email,
+                        previousCredentials.private_key
+                    );
+                }
+                return;
+            }
+
+            settings.set_string('credential-storage', mode);
+
+            if (previousCredentials) {
+                const saved = saveMinimalCredentials(
+                    previousCredentials.client_email,
+                    previousCredentials.private_key
+                );
+                if (!saved && mode === 'keyring') {
+                    this._showError(window, 'Failed to store in keyring. Keeping GSettings.');
+                    storageRow.set_selected(0);
+                    settings.set_string('credential-storage', 'gsettings');
+                    saveMinimalCredentials(
+                        previousCredentials.client_email,
+                        previousCredentials.private_key
+                    );
+                }
+            }
+        });
+
+        storageGroup.add(storageRow);
+        page.add(storageGroup);
         page.add(apiGroup);
         page.add(dependenciesGroup);
         page.add(recordsGroup);
