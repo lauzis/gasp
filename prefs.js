@@ -76,11 +76,45 @@ export default class GASPPreferences extends ExtensionPreferences {
             return true;
         };
 
+        const confirmOverwriteIfNeeded = (onConfirm) => {
+            const existing = loadCredentials(settings);
+            if (!existing) {
+                onConfirm();
+                return;
+            }
+
+            const dialog = new Adw.MessageDialog({
+                transient_for: window,
+                modal: true,
+                heading: 'Overwrite credentials?',
+                body: 'Do you want to overwrite the existing access credentials?',
+            });
+
+            dialog.add_response('cancel', 'Cancel');
+            dialog.add_response('overwrite', 'Overwrite');
+            dialog.set_response_appearance('overwrite', Adw.ResponseAppearance.DESTRUCTIVE);
+            dialog.set_default_response('cancel');
+            dialog.set_close_response('cancel');
+
+            dialog.connect('response', (_, response) => {
+                if (response === 'overwrite') {
+                    onConfirm();
+                }
+            });
+
+            dialog.present();
+        };
+
         const saveServiceAccountJson = (jsonText) => {
             const trimmed = jsonText.trim();
             if (!trimmed) {
-                clearCredentialsInSettings(settings);
-                clearCredentialsInKeyring();
+                const hasManual =
+                    clientEmailRow.get_text().trim() ||
+                    privateKeyRow.get_text().trim();
+                if (!hasManual) {
+                    clearCredentialsInSettings(settings);
+                    clearCredentialsInKeyring();
+                }
                 return true;
             }
 
@@ -95,12 +129,14 @@ export default class GASPPreferences extends ExtensionPreferences {
                     this._showError(window, 'JSON is missing private_key or client_email.');
                     return false;
                 }
-                const saved = saveMinimalCredentials(parsed.client_email, parsed.private_key);
-                if (saved) {
-                    clientEmailRow.set_text(parsed.client_email);
-                    privateKeyRow.set_text(parsed.private_key);
-                }
-                return saved;
+                confirmOverwriteIfNeeded(() => {
+                    const saved = saveMinimalCredentials(parsed.client_email, parsed.private_key);
+                    if (saved) {
+                        clientEmailRow.set_text(parsed.client_email);
+                        privateKeyRow.set_text(parsed.private_key);
+                    }
+                });
+                return true;
             } catch (e) {
                 this._showError(window, 'Invalid JSON. Paste the full Service Account JSON file.');
                 return false;
@@ -238,12 +274,6 @@ export default class GASPPreferences extends ExtensionPreferences {
 
         apiGroup.add(privateKeyRow);
 
-        const storedCredentials = loadCredentials(settings);
-        if (storedCredentials) {
-            clientEmailRow.set_text(storedCredentials.client_email);
-            privateKeyRow.set_text(storedCredentials.private_key);
-        }
-
         const migrateToKeyringIfNeeded = () => {
             if (getCredentialStorageMode(settings) !== 'keyring') {
                 return;
@@ -265,6 +295,12 @@ export default class GASPPreferences extends ExtensionPreferences {
         };
 
         migrateToKeyringIfNeeded();
+
+        const storedCredentials = loadCredentials(settings);
+        if (storedCredentials) {
+            clientEmailRow.set_text(storedCredentials.client_email);
+            privateKeyRow.set_text(storedCredentials.private_key);
+        }
         
         const propertyIdRow = new Adw.EntryRow({
             title: 'Property ID',
