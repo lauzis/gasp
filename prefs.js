@@ -5,7 +5,7 @@ import GLib from 'gi://GLib';
 import {ExtensionPreferences} from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
 import {GAClient} from './lib/gaAPI.js';
 import {Logger} from './lib/logger.js';
-import {getDependencyStatus} from './lib/dependencyChecker.js';
+import {getDependencyStatus, getDependencyStatusList} from './lib/dependencyChecker.js';
 import {
     getCredentialStorageMode,
     loadCredentials,
@@ -402,26 +402,33 @@ export default class GASPPreferences extends ExtensionPreferences {
             description: 'Verify required system tools',
         });
 
-        const dependenciesRow = new Adw.ActionRow({
-            title: 'OpenSSL',
-        });
-
-        const dependenciesStatusIcon = new Gtk.Image({
-            valign: Gtk.Align.CENTER,
-            visible: false,
-        });
-
-        const updateDependencyStatus = () => {
-            const status = getDependencyStatus();
-            dependenciesRow.set_subtitle(status.message);
-            dependenciesStatusIcon.set_from_icon_name(
-                status.ok ? 'emblem-ok-symbolic' : 'dialog-error-symbolic'
-            );
-            dependenciesStatusIcon.visible = true;
+        const createDependencyRow = (name) => {
+            const row = new Adw.ActionRow({ title: name });
+            const icon = new Gtk.Image({
+                valign: Gtk.Align.CENTER,
+                visible: false,
+            });
+            row.add_suffix(icon);
+            return { row, icon };
         };
 
-        dependenciesRow.add_suffix(dependenciesStatusIcon);
-        dependenciesGroup.add(dependenciesRow);
+        const opensslRow = createDependencyRow('OpenSSL');
+        const keyringRow = createDependencyRow('Keyring');
+
+        const updateDependencyStatus = () => {
+            const statusList = getDependencyStatusList();
+            for (const status of statusList) {
+                const target = status.name === 'Keyring' ? keyringRow : opensslRow;
+                target.row.set_subtitle(status.message);
+                target.icon.set_from_icon_name(
+                    status.ok ? 'emblem-ok-symbolic' : 'dialog-error-symbolic'
+                );
+                target.icon.visible = true;
+            }
+        };
+
+        dependenciesGroup.add(opensslRow.row);
+        dependenciesGroup.add(keyringRow.row);
 
         updateDependencyStatus();
         
