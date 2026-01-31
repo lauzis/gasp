@@ -83,6 +83,7 @@ On first enable without credentials:
 2. **Configure the Extension:**
    - Click the 📊 icon in the panel → Settings
    - Paste your Service Account JSON in the credentials field
+   - Or fill **Client Email** and **Private Key** below
    - Enter your GA4 Property ID (numbers only)
    - Click "Test" to verify the connection
    - ✅ Green checkmark = Success!
@@ -154,7 +155,7 @@ Developer notes, troubleshooting, and commands live in [DEVELOPMENT.md](DEVELOPM
 
 - All data is stored locally on your machine
 - No data is sent to third parties (only Google Analytics API for fetching your own data)
-- API credentials are stored locally in GSettings (not encrypted)
+- API credentials are stored locally in GSettings (not encrypted). Only `client_email` and `private_key` are saved.
 - You control what data is tracked and displayed
 
 ## Compatibility

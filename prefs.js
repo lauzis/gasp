@@ -23,17 +23,89 @@ export default class GASPPreferences extends ExtensionPreferences {
             title: 'Service Account JSON',
             show_apply_button: true,
         });
-        
-        apiKeyRow.connect('apply', () => {
-            settings.set_string('ga-api-key', apiKeyRow.get_text());
+        apiKeyRow.set_text('');
+
+        const clientEmailRow = new Adw.EntryRow({
+            title: 'Client Email',
+            show_apply_button: true,
         });
-        
-        settings.bind(
-            'ga-api-key',
-            apiKeyRow,
-            'text',
-            0
-        );
+
+        const privateKeyRow = new Adw.EntryRow({
+            title: 'Private Key',
+            show_apply_button: true,
+        });
+
+        const parseStoredCredentials = () => {
+            const raw = settings.get_string('ga-api-key').trim();
+            if (!raw) {
+                return {clientEmail: '', privateKey: ''};
+            }
+            try {
+                const parsed = JSON.parse(raw);
+                return {
+                    clientEmail: parsed.client_email || '',
+                    privateKey: parsed.private_key || '',
+                };
+            } catch (e) {
+                return {clientEmail: '', privateKey: ''};
+            }
+        };
+
+        const saveMinimalCredentials = (clientEmail, privateKey) => {
+            const email = clientEmail.trim();
+            const key = privateKey.trim();
+            if (!email && !key) {
+                settings.set_string('ga-api-key', '');
+                apiKeyRow.set_text('');
+                return true;
+            }
+            if (!email || !key) {
+                this._showError(window, 'Both client_email and private_key are required.');
+                return false;
+            }
+
+            const minimal = JSON.stringify({
+                client_email: email,
+                private_key: key,
+            });
+            settings.set_string('ga-api-key', minimal);
+            apiKeyRow.set_text('');
+            return true;
+        };
+
+        const saveServiceAccountJson = (jsonText) => {
+            const trimmed = jsonText.trim();
+            if (!trimmed) {
+                settings.set_string('ga-api-key', '');
+                return true;
+            }
+
+            if (trimmed.startsWith('AIza')) {
+                this._showError(window, 'API keys are not supported. Use Service Account JSON.');
+                return false;
+            }
+
+            try {
+                const parsed = JSON.parse(trimmed);
+                if (!parsed.private_key || !parsed.client_email) {
+                    this._showError(window, 'JSON is missing private_key or client_email.');
+                    return false;
+                }
+                const saved = saveMinimalCredentials(parsed.client_email, parsed.private_key);
+                if (saved) {
+                    clientEmailRow.set_text(parsed.client_email);
+                    privateKeyRow.set_text(parsed.private_key);
+                }
+                return saved;
+            } catch (e) {
+                this._showError(window, 'Invalid JSON. Paste the full Service Account JSON file.');
+                return false;
+            }
+        };
+
+        apiKeyRow.connect('apply', () => {
+            saveServiceAccountJson(apiKeyRow.get_text());
+        });
         
         // Add file chooser button
         const uploadButton = new Gtk.Button({
@@ -77,21 +149,7 @@ export default class GASPPreferences extends ExtensionPreferences {
                                     const decoder = new TextDecoder('utf-8');
                                     const jsonContent = decoder.decode(contents);
                                     
-                                    // Validate it's valid JSON
-                                    try {
-                                        JSON.parse(jsonContent);
-                                        settings.set_string('ga-api-key', jsonContent);
-                                        apiKeyRow.set_text(jsonContent);
-                                    } catch (e) {
-                                        const errorDialog = new Adw.MessageDialog({
-                                            transient_for: window,
-                                            modal: true,
-                                            heading: 'Invalid JSON File',
-                                            body: 'The selected file does not contain valid JSON.',
-                                        });
-                                        errorDialog.add_response('ok', 'OK');
-                                        errorDialog.present();
-                                    }
+                                    saveServiceAccountJson(jsonContent);
                                 }
                             } catch (e) {
                                 const errorDialog = new Adw.MessageDialog({
@@ -115,10 +173,22 @@ export default class GASPPreferences extends ExtensionPreferences {
         apiKeyRow.add_suffix(uploadButton);
         
         apiGroup.add(apiKeyRow);
+
+        clientEmailRow.connect('apply', () => {
+            saveMinimalCredentials(clientEmailRow.get_text(), privateKeyRow.get_text());
+        });
+
+        apiGroup.add(clientEmailRow);
+
+        privateKeyRow.connect('apply', () => {
+            saveMinimalCredentials(clientEmailRow.get_text(), privateKeyRow.get_text());
+        });
+
+        apiGroup.add(privateKeyRow);
         
         const apiHelpRow = new Adw.ActionRow({
             title: 'How to get credentials',
-            subtitle: 'Paste or upload the entire content of your service account JSON file above',
+            subtitle: 'Paste/upload JSON above, or fill client email and private key below',
         });
         
         const apiHelpButton = new Gtk.Button({
@@ -163,6 +233,12 @@ export default class GASPPreferences extends ExtensionPreferences {
         apiHelpRow.set_activatable_widget(apiHelpButton);
         
         apiGroup.add(apiHelpRow);
+
+        const storedCredentials = parseStoredCredentials();
+        if (storedCredentials.clientEmail || storedCredentials.privateKey) {
+            clientEmailRow.set_text(storedCredentials.clientEmail);
+            privateKeyRow.set_text(storedCredentials.privateKey);
+        }
         
         const propertyIdRow = new Adw.EntryRow({
             title: 'Property ID',
@@ -320,8 +396,6 @@ export default class GASPPreferences extends ExtensionPreferences {
         apiGroup.add(testConnectionRow);
         
         // TODO: Add project selector dropdown (fetch from GA API)
-        
-        page.add(apiGroup);
 
         // Dependencies Group
         const dependenciesGroup = new Adw.PreferencesGroup({
@@ -349,7 +423,6 @@ export default class GASPPreferences extends ExtensionPreferences {
 
         dependenciesRow.add_suffix(dependenciesStatusIcon);
         dependenciesGroup.add(dependenciesRow);
-        page.add(dependenciesGroup);
 
         updateDependencyStatus();
         
@@ -406,7 +479,6 @@ export default class GASPPreferences extends ExtensionPreferences {
         });
         displayGroup.add(iconSizeRow);
         
-        page.add(displayGroup);
         
         // Refresh Interval Group
         const refreshGroup = new Adw.PreferencesGroup({
@@ -446,7 +518,6 @@ export default class GASPPreferences extends ExtensionPreferences {
         
         refreshGroup.add(refreshIntervalRow);
         
-        page.add(refreshGroup);
         
         // Peaks Management Group
         const recordsGroup = new Adw.PreferencesGroup({
@@ -513,6 +584,10 @@ export default class GASPPreferences extends ExtensionPreferences {
         
         recordsGroup.add(clearRecordsRow);
         
+        page.add(displayGroup);
+        page.add(refreshGroup);
+        page.add(apiGroup);
+        page.add(dependenciesGroup);
         page.add(recordsGroup);
         
         window.add(page);
