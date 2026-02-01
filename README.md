@@ -15,11 +15,11 @@ A GNOME Shell extension that displays Google Analytics visitor statistics in you
 - **Click to View** - Dropdown menu with detailed statistics
 
 ### Statistics Tracking
-- **Live Visitors** - Track visitors in the most recent refresh window (up to 30 minutes)
+- **Live Visitors** - Track active visitors in the last refresh window (capped at 30 minutes)
 - **Daily Visitors** - Track today's visitor count vs. all-time peak
 - **Weekly Visitors** - Track this week's count vs. peak
 - **Monthly Visitors** - Track this month's count vs. peak
-- **Historical Peaks** - Stored in GSettings from completed periods
+- **Historical Peaks** - Stored in GSettings from completed periods only
 - **Record Seeding** - If a peak is 0, use the previous day/week/month once to fill it
 
 ### Notifications
@@ -30,12 +30,12 @@ A GNOME Shell extension that displays Google Analytics visitor statistics in you
 ### Settings
 - **Google Analytics API** - Configure credentials and connect to GA
 - **Dependencies** - Verify required system tools (OpenSSL)
-- **Credential Storage** - Choose GSettings (plain) or Keyring
+- **Credential Storage** - Choose GSettings (plain) or Keyring (encrypted)
 - **Auto-refresh** - Set update interval (30m, 1h, 2h, 4h, 8h, 12h, 24h)
 - **Panel Display Options** - Choose what stats to display
 - **Icon Size** - Adjust the panel/menu icon size
-- **Clear Peaks** - Reset peak history when needed
-- **Force Refresh** - Manually trigger data update
+- **Clear Peaks** - Reset peak history when needed (with confirmation)
+- **Force Refresh** - Manually trigger data update (available in panel menu)
 
 ## Installation
 
@@ -92,7 +92,7 @@ On first enable without credentials:
 3. **Choose Display Options:**
    - Select what to show in panel (Live/Daily/Weekly/Monthly/Nothing)
    - Set your preferred refresh interval (30m to 24h)
-   - Click "Force Refresh" to get initial data
+   - Click panel icon → Force Refresh to get initial data
 
 4. **Track Your Stats:**
    - Stats will automatically refresh at your chosen interval
@@ -144,7 +144,12 @@ Each line shows: `[emoji] Period: Peak / Current`
 - `lib/panelIndicator.js` - Panel UI and dropdown menu
 - `lib/gaAPI.js` - Google Analytics API client with OAuth 2.0 JWT
 - `lib/notificationManager.js` - Celebration notifications with throttling
-- `lib/dataScheduler.js` - Periodic data refresh scheduler
+- `lib/dataScheduler.js` - Periodic data refresh scheduler and period rollover tracking
+- `lib/credentialStore.js` - Credential management (GSettings/Keyring)
+- `lib/dependencyChecker.js` - System dependency validation (OpenSSL)
+- `lib/refreshInterval.js` - Refresh interval utilities
+
+**Note:** Additional modules (`statsDB.js`, `recordTracker.js`) exist for potential future enhancements but are not currently used.
 
 For detailed technical information, see [DEVELOPMENT.md](DEVELOPMENT.md).
 
