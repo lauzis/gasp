@@ -13,5 +13,9 @@
   ],
   "url": "",
   "uuid": "gasp@gudlenieks.lv",
-  "version": 1
+  "version": 1,
+  "donations": {
+    "github": "lauzis",
+    "paypal": "Lauzis"
+  }
 }
