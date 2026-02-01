@@ -615,6 +615,7 @@ export default class GASPPreferences extends ExtensionPreferences {
                     settings.set_string('last-record-live', '');
                     settings.set_string('last-record-weekly', '');
                     settings.set_string('last-record-monthly', '');
+                    settings.set_string('tmp-sign-data-path', '');
                 }
             });
             

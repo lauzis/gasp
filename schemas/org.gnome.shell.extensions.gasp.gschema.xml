@@ -26,6 +26,12 @@
       <summary>Credential Storage</summary>
       <description>Where to store service account credentials: gsettings or keyring</description>
     </key>
+
+    <key name="tmp-sign-data-path" type="s">
+      <default>''</default>
+      <summary>Temporary signing data path</summary>
+      <description>Last temp file path used for in-memory signing data (for cleanup on crash)</description>
+    </key>
     
     <!-- Display Options -->
     <key name="panel-display" type="s">
