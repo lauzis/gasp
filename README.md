@@ -118,7 +118,7 @@ On first enable without credentials:
 Each line shows: `[emoji] Period: Peak / Current`
 
 - **Trophy icon**: Current value equals or exceeds peak
-- **Chart icon**: Current value is below peak
+- **Pie icon**: Fill level shows `Current / Peak` progress when below peak
 - **Example**: `Live: 12 / 12` (at peak)
 - **Example**: `Weekly: 950 / 847` (below peak)
 
