@@ -597,6 +597,7 @@ export default class GASPPreferences extends ExtensionPreferences {
                     // Clear database - we need to trigger this via a setting that the extension watches
                     settings.set_int('current-daily', 0);
                     settings.set_int('current-live', 0);
+                    settings.set_int('today-live-peak', 0);
                     settings.set_int('current-weekly', 0);
                     settings.set_int('current-monthly', 0);
                     settings.set_int('record-daily', 0);

@@ -67,6 +67,12 @@
       <summary>Current Live Visitors</summary>
       <description>Visitors in the most recent refresh window</description>
     </key>
+
+    <key name="today-live-peak" type="i">
+      <default>0</default>
+      <summary>Today's Live Visitor Peak</summary>
+      <description>Highest live visitor count observed today</description>
+    </key>
     
     <key name="current-weekly" type="i">
       <default>0</default>
