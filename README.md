@@ -13,9 +13,11 @@ A GNOME Shell extension that displays Google Analytics visitor statistics in you
 - **Live Stats** - Shows current visitor count next to icon
 - **Flexible Display** - Choose to show Live, Daily, Weekly, Monthly, or no stats in panel
 - **Click to View** - Dropdown menu with detailed statistics
+- **Dynamic Status Icons** - Trophy for records, pie icon for progress toward peak
 
 ### Statistics Tracking
 - **Live Visitors** - Track active visitors in the last refresh window (capped at 30 minutes)
+- **Live Triple View** - Dropdown shows `All-time peak / today peak / latest live value`
 - **Daily Visitors** - Track today's visitor count vs. all-time peak
 - **Weekly Visitors** - Track this week's count vs. peak
 - **Monthly Visitors** - Track this month's count vs. peak
@@ -115,13 +117,15 @@ On first enable without credentials:
 
 ### Dropdown Menu Format
 
-Each line shows: `[emoji] Period: Peak / Current`
+Daily/weekly/monthly lines show: `Period: Peak / Current`  
+Live line shows: `Live: Peak / Today Peak / Latest`
 
 - **Trophy icon**: Current value equals or exceeds peak
-- **Pie icon (daily/weekly/monthly)**: Fill level shows elapsed period progress
-- **Pie color**: Green = on pace, Yellow = behind pace (>=40%), Red = very low (<40%)
-- **Example**: `Live: 12 / 12` (at peak)
-- **Example**: `Weekly: 950 / 847` (below peak)
+- **Pie icon**: Shown while current value is below peak
+- **Pie fill**: `Current / Peak` progress percentage
+- **Pie color**: Green = on pace (or at live peak), Yellow = below pace (>=40%), Red = very low (<40%)
+- **Example**: `Live: 120 / 92 / 88`
+- **Example**: `Weekly: 950 / 847`
 
 ## Technical Details
 
@@ -146,6 +150,8 @@ Each line shows: `[emoji] Period: Peak / Current`
 - `lib/gaAPI.js` - Google Analytics API client with OAuth 2.0 JWT
 - `lib/notificationManager.js` - Celebration notifications with throttling
 - `lib/dataScheduler.js` - Periodic data refresh scheduler and period rollover tracking
+- `lib/constants.js` - Shared settings keys and period constants
+- `lib/dateUtils.js` - Shared date/period helpers for scheduler and API
 - `lib/credentialStore.js` - Credential management (GSettings/Keyring)
 - `lib/dependencyChecker.js` - System dependency validation (OpenSSL)
 - `lib/refreshInterval.js` - Refresh interval utilities
@@ -192,6 +198,16 @@ Developer notes, troubleshooting, and commands live in [DEVELOPMENT.md](DEVELOPM
 
 ## Changelog
 
+### Version 1.0.0 (February 2026 updates)
+
+- Added pie progress icons for below-peak states in dropdown metrics
+- Added pace-based icon coloring (green/yellow/red) tied to period progress
+- Live row now shows `Peak / Today Peak / Latest` values
+- Added `today-live-peak` tracking and reset support in settings/clear action
+- Improved realtime live query handling with `metricAggregations: TOTAL` and row fallback
+- Added donation links in extension metadata (`github`, `paypal`)
+- Refactored shared logic into `lib/constants.js` and `lib/dateUtils.js`
+
 ### Version 1.0.0 (January 2026)
 
 **Initial Release:**
@@ -230,4 +246,4 @@ Aivars Lauzis
 ---
 
 **Version**: 1.0.0  
-**Last Updated**: January 2026
+**Last Updated**: February 2026

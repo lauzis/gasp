@@ -23,6 +23,8 @@
 **Additional Modules:**
 - **Logger** (lib/logger.js) - Debug logging utilities
 - **RefreshInterval** (lib/refreshInterval.js) - Interval conversion helpers
+- **Constants** (lib/constants.js) - Shared settings keys and period constants
+- **DateUtils** (lib/dateUtils.js) - Shared period/date helpers
 - **StatsDB** (lib/statsDB.js) - Future: Database-backed statistics storage (currently unused)
 - **RecordTracker** (lib/recordTracker.js) - Future: Enhanced record tracking (currently unused)
 
@@ -76,6 +78,8 @@
 5. **PanelIndicator** updates display with latest stats
 
 **Record seeding:** If a peak is 0, fetch the previous day/week/month once and set it.
+**Live peak tracking:** Scheduler keeps `today-live-peak` and resets it on daily rollover.
+**Daily safeguard:** If live exceeds fetched daily, daily is clamped to at least live.
 
 ## Google Analytics API Implementation
 
@@ -120,10 +124,12 @@ Content-Type: application/json
 
 {
   "metrics": [{ "name": "activeUsers" }],
+  "metricAggregations": ["TOTAL"],
   "minuteRanges": [{ "startMinutesAgo": 29, "endMinutesAgo": 0 }]
 }
 ```
 **Note:** Live data window is the refresh interval or 30 minutes, whichever is smaller.
+If totals are missing in a response, the client falls back to the max row value.
 
 ### Date Ranges
 - **Daily**: `today` to `today`
@@ -153,6 +159,8 @@ gasp@gudlenieks.lv/
 │   ├── gaAPI.js             - GA API client with OAuth
 │   ├── notificationManager.js - Notifications
 │   ├── dataScheduler.js     - Periodic refresh
+│   ├── constants.js         - Shared keys/constants
+│   ├── dateUtils.js         - Shared date helpers
 │   ├── credentialStore.js   - Credential management
 │   ├── dependencyChecker.js - Dependency validation
 │   ├── refreshInterval.js   - Interval utilities
@@ -276,6 +284,15 @@ glib-compile-schemas .
 5. **No OAuth Flow**: User interactive OAuth not supported (would require browser)
 
 ## Changelog
+
+### Version 1.0.0 (February 2026 updates)
+
+- Added pie progress icons and pace-based icon coloring in `PanelIndicator`
+- Added live triple-value menu format: `Peak / Today Peak / Latest`
+- Added `today-live-peak` schema key and rollover/reset handling
+- Improved realtime query handling with totals aggregation and fallback parsing
+- Added metadata donation links (`github`, `paypal`)
+- Refactored shared logic into `lib/constants.js` and `lib/dateUtils.js`
 
 ### Version 1.0.0 (January 2026)
 
