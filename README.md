@@ -118,7 +118,8 @@ On first enable without credentials:
 Each line shows: `[emoji] Period: Peak / Current`
 
 - **Trophy icon**: Current value equals or exceeds peak
-- **Pie icon**: Fill level shows `Current / Peak` progress when below peak
+- **Pie icon (daily/weekly/monthly)**: Fill level shows elapsed period progress
+- **Pie color**: Green = on pace, Yellow = behind pace (>=40%), Red = very low (<40%)
 - **Example**: `Live: 12 / 12` (at peak)
 - **Example**: `Weekly: 950 / 847` (below peak)
 
