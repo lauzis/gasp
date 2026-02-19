@@ -14,6 +14,12 @@
       <summary>Google Analytics Property ID</summary>
       <description>The GA property/project ID to track</description>
     </key>
+
+    <key name="analytics-timezone" type="s">
+      <default>''</default>
+      <summary>Analytics Property Timezone</summary>
+      <description>Timezone reported by Google Analytics Data API metadata</description>
+    </key>
     
     <key name="ga-project-name" type="s">
       <default>''</default>
@@ -155,19 +161,19 @@
     <key name="last-period-daily" type="s">
       <default>''</default>
       <summary>Last Daily Period Start</summary>
-      <description>Timestamp of the current daily period start</description>
+      <description>Current daily period key (YYYY-MM-DD)</description>
     </key>
 
     <key name="last-period-weekly" type="s">
       <default>''</default>
       <summary>Last Weekly Period Start</summary>
-      <description>Timestamp of the current weekly period start</description>
+      <description>Current weekly period key (ISO week start date)</description>
     </key>
 
     <key name="last-period-monthly" type="s">
       <default>''</default>
       <summary>Last Monthly Period Start</summary>
-      <description>Timestamp of the current monthly period start</description>
+      <description>Current monthly period key (YYYY-MM)</description>
     </key>
     
     <!-- Last Update Timestamp -->

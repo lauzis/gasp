@@ -308,7 +308,12 @@ export default class GASPPreferences extends ExtensionPreferences {
         });
         
         propertyIdRow.connect('apply', () => {
-            settings.set_string('ga-property-id', propertyIdRow.get_text());
+            const propertyId = propertyIdRow.get_text().trim();
+            const previousPropertyId = settings.get_string('ga-property-id');
+            settings.set_string('ga-property-id', propertyId);
+            if (propertyId !== previousPropertyId) {
+                settings.set_string('analytics-timezone', '');
+            }
         });
         
         settings.bind(
@@ -319,6 +324,24 @@ export default class GASPPreferences extends ExtensionPreferences {
         );
         
         apiGroup.add(propertyIdRow);
+
+        const analyticsTimezoneRow = new Adw.ActionRow({
+            title: 'Analytics Timezone',
+        });
+
+        const updateAnalyticsTimezoneSubtitle = () => {
+            const analyticsTimezone = settings.get_string('analytics-timezone').trim();
+            if (analyticsTimezone) {
+                analyticsTimezoneRow.set_subtitle(analyticsTimezone);
+                return;
+            }
+
+            analyticsTimezoneRow.set_subtitle('Not detected yet (detected after successful test/fetch)');
+        };
+
+        updateAnalyticsTimezoneSubtitle();
+        settings.connect('changed::analytics-timezone', updateAnalyticsTimezoneSubtitle);
+        apiGroup.add(analyticsTimezoneRow);
         
         const testConnectionRow = new Adw.ActionRow({
             title: 'Test Connection',
@@ -390,6 +413,7 @@ export default class GASPPreferences extends ExtensionPreferences {
                     testConnectionRow.set_subtitle(`✓ Success! Live: ${stats.live}, Daily: ${stats.daily}, Weekly: ${stats.weekly}, Monthly: ${stats.monthly}`);
                     // Mark API as connected on successful test
                     settings.set_boolean('api-connected', true);
+                    updateAnalyticsTimezoneSubtitle();
                 } else {
                     testStatusIcon.set_from_icon_name('dialog-error-symbolic');
                     testConnectionRow.set_subtitle('Connection failed. Check logs: journalctl -f | grep gastats');
@@ -617,6 +641,7 @@ export default class GASPPreferences extends ExtensionPreferences {
                     settings.set_string('last-record-weekly', '');
                     settings.set_string('last-record-monthly', '');
                     settings.set_string('tmp-sign-data-path', '');
+                    settings.set_string('analytics-timezone', '');
                 }
             });
             
