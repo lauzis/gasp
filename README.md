@@ -4,7 +4,13 @@
 
 A GNOME Shell extension that displays Google Analytics visitor statistics in your panel and notifies you when you break peaks. Track daily, weekly, and monthly visitor counts at a glance.
 
+## Dropdown Menu Example
+
 ![GASP Screenshot](git-images/gasp.png)
+
+# Settings Example
+
+![GASP Screenshot](git-images/gasp-settings.png)
 
 ## Features
 
@@ -119,6 +125,9 @@ On first enable without credentials:
 
 Daily/weekly/monthly lines show: `Period: Peak / Current`  
 Live line shows: `Live: Peak / Today Peak / Latest`
+
+- `Daily Current` comes directly from Google Analytics and can decrease (including `0`)
+- `Today Peak` is the highest live value seen today and resets on daily rollover
 
 - **Trophy icon**: Current value equals or exceeds peak
 - **Pie icon**: Shown while current value is below peak

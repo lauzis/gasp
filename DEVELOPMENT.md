@@ -79,7 +79,7 @@
 
 **Record seeding:** If a peak is 0, fetch the previous day/week/month once and set it.
 **Live peak tracking:** Scheduler keeps `today-live-peak` and resets it on daily rollover.
-**Daily safeguard:** If live exceeds fetched daily, daily is clamped to at least live.
+**Daily behavior:** Daily values follow the GA report directly and can decrease (including to 0).
 
 ## Google Analytics API Implementation
 
