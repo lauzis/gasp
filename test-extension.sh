@@ -12,7 +12,7 @@ echo ""
 
 # Check all required files
 echo "📁 Checking files..."
-files=("extension.js" "prefs.js" "metadata.json" "lib/logger.js" "lib/panelIndicator.js" "lib/statsDB.js" "lib/gaAPI.js" "lib/notificationManager.js" "lib/recordTracker.js" "lib/dataScheduler.js" "schemas/gschemas.compiled")
+files=("extension.js" "prefs.js" "metadata.json" "lib/logger.js" "lib/panelIndicator.js" "lib/gaAPI.js" "lib/notificationManager.js" "lib/dataScheduler.js" "schemas/gschemas.compiled")
 
 all_good=true
 for file in "${files[@]}"; do

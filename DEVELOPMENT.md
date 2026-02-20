@@ -25,8 +25,6 @@
 - **RefreshInterval** (lib/refreshInterval.js) - Interval conversion helpers
 - **Constants** (lib/constants.js) - Shared settings keys and period constants
 - **DateUtils** (lib/dateUtils.js) - Shared period/date helpers
-- **StatsDB** (lib/statsDB.js) - Future: Database-backed statistics storage (currently unused)
-- **RecordTracker** (lib/recordTracker.js) - Future: Enhanced record tracking (currently unused)
 
 **Google Analytics API Integration:**
 - ✅ Service Account authentication with OAuth 2.0 JWT
@@ -163,9 +161,7 @@ gasp@gudlenieks.lv/
 │   ├── dateUtils.js         - Shared date helpers
 │   ├── credentialStore.js   - Credential management
 │   ├── dependencyChecker.js - Dependency validation
-│   ├── refreshInterval.js   - Interval utilities
-│   ├── statsDB.js          - (Future) Database storage
-│   └── recordTracker.js    - (Future) Enhanced tracking
+│   └── refreshInterval.js   - Interval utilities
 ├── schemas/
 │   └── org.gnome.shell.extensions.gasp.gschema.xml
 ├── metadata.json
