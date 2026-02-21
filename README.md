@@ -86,6 +86,7 @@ Code reviews by [CodeRabbit](https://coderabbit.ai/)
 If you find this extension useful, consider supporting development:
 
 Donate via PayPal: https://www.paypal.com/paypalme/Lauzis
+
 Donate via GitHub: https://github.com/sponsors/lauzis
 
 ---
