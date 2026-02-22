@@ -11,12 +11,20 @@
 - [x] Complete documentation
 
 **All Components Implemented:**
-1. **PanelIndicator** (lib/panelIndicator.js) - Panel icon, stats display, dropdown menu
-2. **GAClient** (lib/gaAPI.js) - Google Analytics Data API v1beta integration
-3. **NotificationManager** (lib/notificationManager.js) - Celebration notifications
-4. **DataScheduler** (lib/dataScheduler.js) - Periodic data refresh and peak detection
-5. **Main Extension** (extension.js) - Component orchestration
-6. **Preferences UI** (prefs.js) - GTK4/Adwaita settings interface
+1. **PanelIndicator** (lib/panelIndicator.js) - Panel icon, stats display, dropdown menu with force refresh
+2. **GAClient** (lib/gaAPI.js) - Google Analytics Data API v1beta integration with OAuth 2.0 JWT
+3. **NotificationManager** (lib/notificationManager.js) - Celebration notifications with smart time formatting
+4. **DataScheduler** (lib/dataScheduler.js) - Periodic data refresh, peak detection, and period rollover tracking
+5. **CredentialStore** (lib/credentialStore.js) - Secure credential management (GSettings/Keyring)
+6. **DependencyChecker** (lib/dependencyChecker.js) - System dependency validation
+7. **Main Extension** (extension.js) - Component orchestration and lifecycle management
+8. **Preferences UI** (prefs.js) - GTK4/Adwaita settings interface with test connection
+
+**Additional Modules:**
+- **Logger** (lib/logger.js) - Debug logging utilities
+- **RefreshInterval** (lib/refreshInterval.js) - Interval conversion helpers
+- **Constants** (lib/constants.js) - Shared settings keys and period constants
+- **DateUtils** (lib/dateUtils.js) - Shared period/date helpers
 
 **Google Analytics API Integration:**
 - ✅ Service Account authentication with OAuth 2.0 JWT
@@ -68,6 +76,8 @@
 5. **PanelIndicator** updates display with latest stats
 
 **Record seeding:** If a peak is 0, fetch the previous day/week/month once and set it.
+**Live peak tracking:** Scheduler keeps `today-live-peak` and resets it on daily rollover.
+**Daily behavior:** Daily values follow the GA report directly and can decrease (including to 0).
 
 ## Google Analytics API Implementation
 
@@ -112,9 +122,12 @@ Content-Type: application/json
 
 {
   "metrics": [{ "name": "activeUsers" }],
+  "metricAggregations": ["TOTAL"],
   "minuteRanges": [{ "startMinutesAgo": 29, "endMinutesAgo": 0 }]
 }
 ```
+**Note:** Live data window is the refresh interval or 30 minutes, whichever is smaller.
+If totals are missing in a response, the client falls back to the max row value.
 
 ### Date Ranges
 - **Daily**: `today` to `today`
@@ -143,7 +156,12 @@ gasp@gudlenieks.lv/
 │   ├── panelIndicator.js    - Panel UI
 │   ├── gaAPI.js             - GA API client with OAuth
 │   ├── notificationManager.js - Notifications
-│   └── dataScheduler.js     - Periodic refresh
+│   ├── dataScheduler.js     - Periodic refresh
+│   ├── constants.js         - Shared keys/constants
+│   ├── dateUtils.js         - Shared date helpers
+│   ├── credentialStore.js   - Credential management
+│   ├── dependencyChecker.js - Dependency validation
+│   └── refreshInterval.js   - Interval utilities
 ├── schemas/
 │   └── org.gnome.shell.extensions.gasp.gschema.xml
 ├── metadata.json
@@ -163,6 +181,7 @@ gasp@gudlenieks.lv/
 - **OpenSSL**: Required for RSA signing (usually pre-installed)
 - **libsoup3**: HTTP client (provided by GNOME Shell)
 - **Dependency Check**: Preferences UI can recheck availability (Settings → Dependencies)
+- **Keyring (optional)**: Used if credential storage is set to Keyring
 
 ### JavaScript Modules
 - `gi://Soup` - HTTP requests
@@ -215,14 +234,42 @@ glib-compile-schemas .
 
 ### Private Key Security
 - Private keys stored in GSettings (user's home directory)
-- Temporary files created for OpenSSL operations, immediately deleted
-- Temp files use unique timestamps to avoid conflicts
+- Keys are never written to disk during signing operations
+- In-memory signing via stdin keeps private key in memory only
+
+### RSA Signing Implementation
+
+**Current approach (Hybrid In-Memory):**
+- **Private key**: Passed to OpenSSL via stdin ✓ (never touches disk)
+- **Data to sign**: Written to temp file `/tmp/gasp_data_*` (non-sensitive JWT headers)
+
+**Why this approach:**
+1. **Security**: The private key (the actual secret) never touches disk
+2. **Data sensitivity**: JWT data contains only public metadata (timestamps, email, OAuth scopes)
+3. **Technical limitations**: OpenSSL's stdin can only accept one input (key OR data, not both)
+4. **Stability**: This approach is reliable and uses well-tested APIs
+
+**What data is being signed:**
+- JWT header: `{ alg: "RS256", typ: "JWT" }`
+- JWT claims: client email, scope, audience, expiration, issued-at timestamp
+- Combined as: `base64url(header).base64url(claims)`
+- This data is public and sent over HTTPS anyway
+
+**Why not fully in-memory:**
+- `GLibUnix.open_pipe()` has buggy/incomplete GJS bindings
+- OpenSSL cannot read both key and data from stdin simultaneously
+- Alternative approaches (memfd, multiple pipes) require FFI or complex fd management
+- The security benefit would be minimal since JWT data contains no secrets
+
+**Future alternatives:**
+- Pure JavaScript RSA library (e.g., node-forge, WebCrypto polyfill) would eliminate OpenSSL dependency and temp files entirely
 
 ### Recommendations
 1. **File Permissions**: Ensure GSettings are not world-readable
 2. **Service Account**: Use dedicated service account with minimal permissions
 3. **Property Access**: Grant only "Viewer" role to service account
 4. **Key Rotation**: Periodically rotate service account keys
+5. **Temp Files**: System automatically cleans up temp files; extension also handles cleanup on init
 
 ## Known Limitations
 
@@ -233,6 +280,15 @@ glib-compile-schemas .
 5. **No OAuth Flow**: User interactive OAuth not supported (would require browser)
 
 ## Changelog
+
+### Version 1.0.0 (February 2026 updates)
+
+- Added pie progress icons and pace-based icon coloring in `PanelIndicator`
+- Added live triple-value menu format: `Peak / Today Peak / Latest`
+- Added `today-live-peak` schema key and rollover/reset handling
+- Improved realtime query handling with totals aggregation and fallback parsing
+- Added metadata donation links (`github`, `paypal`)
+- Refactored shared logic into `lib/constants.js` and `lib/dateUtils.js`
 
 ### Version 1.0.0 (January 2026)
 

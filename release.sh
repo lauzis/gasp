@@ -37,11 +37,11 @@ zip -r "$OUTPUT_FILE" . \
     -x "STATUS.md" \
     -x "QUICK_START.md" \
     -x "IMPLEMENTATION_SUMMARY.md" \
-    -x "GOOGLE_ANALYTICS_SETUP" \
     -x "DEVELOPMENT.md" \
     -x "CHANGES.md" \
     -x "API_KEY_VS_SERVICE_ACCOUNT.md" \
     -x "API_IMPLEMENTATION.md" \
+    -x "test-extension.sh"
 
 echo "✅ Release created: $OUTPUT_FILE"
 echo ""

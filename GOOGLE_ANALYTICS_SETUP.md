@@ -84,8 +84,10 @@ You need a complete Service Account JSON file that looks like:
 2. Copy **ALL** the content (entire JSON, from first `{` to last `}`)
 3. Open GASP extension preferences
 4. Paste into "Service Account JSON" field
+   - Or fill **Client Email** and **Private Key** below
 5. Enter your Property ID (numbers only)
 6. Click **Test** to verify the connection
+7. Choose where to store credentials (GSettings or Keyring)
 
 ✅ **Green checkmark** = Success! Extension will use real Google Analytics data
 ❌ **Red X** = Problem - check logs with: `journalctl -f | grep gasp`
@@ -159,9 +161,10 @@ POST https://analyticsdata.googleapis.com/v1beta/properties/{propertyId}:runRepo
 - **libsoup3**: HTTP client (provided by GNOME Shell)
 
 ### Security
-- Service account credentials stored in GSettings (user-readable only)
+- Service account credentials stored in GSettings or Keyring (based on settings)
 - Temporary files for OpenSSL operations (immediately deleted)
 - Minimal permissions required (only "Viewer" role needed)
+- Only `client_email` and `private_key` are saved from the JSON file
 
 ## Current Limitations
 

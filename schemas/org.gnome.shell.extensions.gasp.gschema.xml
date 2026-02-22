@@ -14,11 +14,29 @@
       <summary>Google Analytics Property ID</summary>
       <description>The GA property/project ID to track</description>
     </key>
+
+    <key name="analytics-timezone" type="s">
+      <default>''</default>
+      <summary>Analytics Property Timezone</summary>
+      <description>Timezone reported by Google Analytics Data API metadata</description>
+    </key>
     
     <key name="ga-project-name" type="s">
       <default>''</default>
       <summary>Project Name</summary>
       <description>Display name of the tracked project</description>
+    </key>
+
+    <key name="credential-storage" type="s">
+      <default>'keyring'</default>
+      <summary>Credential Storage</summary>
+      <description>Where to store service account credentials: gsettings or keyring</description>
+    </key>
+
+    <key name="tmp-sign-data-path" type="s">
+      <default>''</default>
+      <summary>Temporary signing data path</summary>
+      <description>Last temp file path used for in-memory signing data (for cleanup on crash)</description>
     </key>
     
     <!-- Display Options -->
@@ -54,6 +72,12 @@
       <default>0</default>
       <summary>Current Live Visitors</summary>
       <description>Visitors in the most recent refresh window</description>
+    </key>
+
+    <key name="today-live-peak" type="i">
+      <default>0</default>
+      <summary>Today's Live Visitor Peak</summary>
+      <description>Highest live visitor count observed today</description>
     </key>
     
     <key name="current-weekly" type="i">
@@ -137,19 +161,19 @@
     <key name="last-period-daily" type="s">
       <default>''</default>
       <summary>Last Daily Period Start</summary>
-      <description>Timestamp of the current daily period start</description>
+      <description>Current daily period key (YYYY-MM-DD)</description>
     </key>
 
     <key name="last-period-weekly" type="s">
       <default>''</default>
       <summary>Last Weekly Period Start</summary>
-      <description>Timestamp of the current weekly period start</description>
+      <description>Current weekly period key (ISO week start date)</description>
     </key>
 
     <key name="last-period-monthly" type="s">
       <default>''</default>
       <summary>Last Monthly Period Start</summary>
-      <description>Timestamp of the current monthly period start</description>
+      <description>Current monthly period key (YYYY-MM)</description>
     </key>
     
     <!-- Last Update Timestamp -->
