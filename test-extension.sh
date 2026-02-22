@@ -10,9 +10,24 @@ echo "📍 Extension location:"
 pwd
 echo ""
 
-# Check all required files
+# Check all required runtime files
 echo "📁 Checking files..."
-files=("extension.js" "prefs.js" "metadata.json" "lib/logger.js" "lib/panelIndicator.js" "lib/gaAPI.js" "lib/notificationManager.js" "lib/dataScheduler.js" "schemas/gschemas.compiled")
+files=(
+    "extension.js"
+    "prefs.js"
+    "metadata.json"
+    "schemas/gschemas.compiled"
+    "lib/logger.js"
+    "lib/panelIndicator.js"
+    "lib/gaAPI.js"
+    "lib/notificationManager.js"
+    "lib/dataScheduler.js"
+    "lib/constants.js"
+    "lib/dateUtils.js"
+    "lib/dependencyChecker.js"
+    "lib/credentialStore.js"
+    "lib/refreshInterval.js"
+)
 
 all_good=true
 for file in "${files[@]}"; do
