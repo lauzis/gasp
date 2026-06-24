@@ -223,3 +223,5 @@ Aivars Lauzis
 
 **Version**: 1.0.0  
 **Last Updated**: January 2026
+
+> This project is maintained with the assistance of [Claude Code](https://claude.ai/code) and [CodeRabbit](https://coderabbit.ai).
